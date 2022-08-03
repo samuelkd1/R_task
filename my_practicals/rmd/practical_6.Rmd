@@ -1,0 +1,201 @@
+---
+title: "practical_6"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+library(lubridate)
+```
+
+# 6.1 Exercise
+Parse the following strings using a suitable parse_*() function. (slightly more difficult than expected)
+
+```{r}
+"1,5" # to be parsed as 1.5
+
+parse_double("1.5",locale = locale(decimal_mark = ","))
+
+"September 21, 2020 16:25:59" 
+
+parse_datetime("September 21, 2020 16:25:59 UTC", format = "%B %d, %Y %T %Z")
+
+"€1.999,99" # the symbol makes it parse number instead
+
+parse_number("€1.999,99",locale = locale(grouping_mark = ".", decimal_mark = ","))
+```
+
+# 6.2 Exercise
+Download the file ramen_ratings.csv. This data set contains contains ratings of different types of ramen and is a modified version of a data set on kaggle (but use the file from Learn and not the one from kaggle)
+
+a. Inspect the structure of the CSV file by printing the first four lines to the console.
+
+```{r}
+read_lines(here("data","ramen_ratings.csv"), n_max = 4)
+```
+csv 2 delim deffo
+
+b. Read the data into R.
+
+```{r}
+ramen <- read_csv2(here("data","ramen_ratings.csv"), skip = 1)
+```
+
+
+c. Inspect the tibble created in Question 1. What are the data types of the columns? Why are the names of the columns Review # and Top Ten encapsulated in back ticks? Reformat the column names to snake_case.
+
+The data types in of the columns are all character except review which is a double. Review # and Top Ten have back ticks because they are columns with spaces in them.
+
+```{r}
+# inspecting tibble
+glimpse(ramen)
+colnames(ramen)
+
+# reformatting variables.
+ramen <- clean_names(ramen)
+```
+
+
+c. Above, we learned that R uses heuristics to guess a sensible data type for each column. Why is the column stars of type character and not double?
+
+R is confused because of the "unrated" values so it made everything a character.
+
+d.Convert Stars to a double vector using a suitable parser. (completed but forgot mutate function, don't forget next time.)
+
+```{r}
+# when making conversions do not forget mutate
+ramen <- ramen %>%
+  mutate(stars = parse_double(stars, locale = locale(decimal_mark = ",")))
+
+ramen <- ramen %>%
+  mutate(review_number = as.integer(review_number))
+```
+
+
+e. Change the data type of stars. What do the parsing failures mean for your analysis.
+
+parsing failures shows that there are some observations that are incomplete and we may have to remove them depending on how important the rest of the information is.
+
+
+# 6.3 Exercise
+Download the file market_cap.csv. This data set contains time-series data on the market capitalisation of ten US companies. Load the data into R and shape it into a tidy format (don’t forget to ensure that all columns have sensible data types).
+
+```{r}
+# always read lines
+
+read_lines(here("data","market_cap.csv"), n_max = 4)
+
+#clearly read csv
+
+```
+
+```{r}
+market_cap <- read.csv(here("data","market_cap.csv"))
+
+market_cap
+```
+not difficult make the first set of columns years and the values market cap (pivot longer) (complete)
+
+```{r}
+market_cap <- market_cap %>%
+  pivot_longer(
+    cols      = -company, # use all columns except "company"
+    names_to  = c("year") 
+  ) 
+
+market_cap <- market_cap %>%
+  mutate(year = str_remove(year,"X"))
+
+market_cap %>% 
+  mutate(year = as_date(year))
+```
+
+# 6.4 Exercise
+The following code recreates the non-tidy data frame for the cats-and-dogs example from Section 2.1 in Chapter 6.
+
+```{r}
+df_nontidy <- tibble(
+  ` ` = c("selfless", "selfish"), 
+  cats = c(4L, 19L), 
+  dogs = c(25L, 3L)
+)
+df_nontidy
+```
+
+a. Reshape the data into the same tidy format shown in Section 2.1 in Chapter 6. Don’t forget to ensure that all columns have sensible data types.
+
+```{r}
+    df_tidy <- 
+      df_nontidy %>%
+      pivot_longer(
+        cols = c(cats, dogs), 
+        names_to = "animal", 
+        values_to = "count"
+      ) %>%
+      rename(character = ` `)
+    
+    df_tidy
+```
+
+
+b. Reverse the operation so that you obtain the original non-tidy data frame df. 
+```{r}
+df_nontidy <-
+      df_tidy %>%
+      pivot_wider(names_from = animal, values_from = count) %>%
+      rename(` ` = character, dogs = dogs, cats = cats)
+
+df_nontidy
+    
+```
+
+6.5 Exercise
+Perform the reverse of the operations shown in Section 2.2 of Chapter 6, i.e. recreate the non-tidy tables df_nontidy_1 and df_nontidy_2 shown in Section 2.2. by lengthening/widening the tidy table df_tidy.
+
+
+```{r}
+df_tidy <- table1 %>%
+  mutate(
+    country = str_replace_all(country, c("Afghanistan" = "A", 
+                                         "Brazil" = "B", 
+                                         "China" = "C"))
+  ) %>%
+  mutate(across(c(cases, population), round, -3)) %>%
+  mutate(across(c(cases, population), as.integer))
+
+df_tidy
+```
+```{r}
+df_nontidy_1 <- df_tidy %>%
+  pivot_longer(
+    cols     = c(cases, population), 
+    names_to = "type", 
+    values_to = "count"
+  )
+
+df_nontidy_2 <- df_tidy %>%
+  pivot_wider(
+    names_from  = year, 
+    values_from = c(cases, population)
+  )
+```
+
+# 6.7 Exercise
+
+Use drop_na() to perform the reverse of the operation from Section 2.4 of Chapter 6, i.e. to convert from explicit missingness (df_missing_1) to implicit missigness (df_missing_2), where df_missing_1 is obtained as follows.
+
+
+```{r}
+df_missing_1 <- df_tidy
+df_missing_1[2, ] <- NA
+```
+
+```{r}
+df_missing_1[2, ] <- NA
+```
+
+# for 6.8 grab from solutions 
+
+

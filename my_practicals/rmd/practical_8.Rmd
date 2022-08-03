@@ -1,0 +1,259 @@
+---
+title: "practical_8"
+output: html_document
+---
+```{r}
+library(gapminder)
+library(tidyverse)
+```
+
+# Exercise 8.1 
+Consider the gapminder data again. To simplify the graphs, exclude any data points associated with countries from Oceania for this exercise.
+
+a. Create again a scatterplot of the base-10 logarithm of GDP per capita vs life expectancy in 2007 for all continents except Oceania and such that the size of the points gives information about the population size. Recall that before we used colours to distinguish the different continents. Now use faceting instead. Remember to use transparency to lessen the impact of overlapping points. (complete)
+
+```{r}
+gapminder_2007 %>%
+  ggplot(mapping = aes(x = log10(gdpPercap), y = lifeExp)) +
+  geom_line() +
+  coord_flip
+
+
+```
+
+```{r}
+p <- gapminder_2007 %>%
+  ggplot(mapping = aes(x = log10(gdpPercap), y = lifeExp))
+# facet by continent
+p <- p + geom_point(alpha=0.3) +
+  facet_wrap(~ continent)
+
+p
+```
+
+b. Make it easier to compare the data values for a particular continent to those for all continents by adding the values for all continents in light grey shade in the background of each panel.
+
+```{r}
+gapminder_2007 %>% 
+  ggplot(mapping = aes(x = log10(gdpPercap), y = lifeExp, size = pop)) +
+  geom_point(data = select(gapminder_2007, !continent), colour = "grey85") +
+  geom_point(alpha = 0.3) +
+  facet_wrap(facets = vars(continent))
+```
+
+c. Reproduce the following figure.
+```{r}
+gapminder_4 <- gapminder %>%
+  filter(continent != "Oceania") 
+
+
+pt_1 <- gapminder_4 %>%
+  ggplot(mapping = aes(x = year, y = lifeExp, group = country)) +
+  geom_line(data = select(gapminder_4,!continent), color = "grey85") +
+  geom_line(alpha = 0.2) +
+  facet_wrap(vars(continent))
+
+# data must include data argument it must be explicit
+
+
+pt_1
+```
+
+d. Recreate the figures from Exercise 7.1(j) (Problem sheet 7) but now use faceting to circumvent the drawbacks of “stacking”.
+
+looks pretty shit move on
+
+```{r}
+ p <- ggplot(
+           data    = gapminder, 
+           mapping = aes(x = log10(gdpPercap), y = lifeExp)
+         )
+    
+    p + geom_point() +
+      facet_wrap(~year)
+    
+    # qualitative colour scheme doesn't seem appropriate either because we lose 
+    # all the information about the ordering (in time).
+    p + geom_point(mapping = aes(colour = as.factor(year)))
+    
+    # sequential but discrete colour scheme seems more appropriate.
+    p + geom_point(mapping = aes(colour = as.ordered(year)))
+```
+# Exercise 8.2
+
+a. Consider the gapminder data and create a scatterplot of gdpPercap vs lifeExp for the year 2007 with point sizes representing population sizes. Exclude countries which have a population sizes greater than 10 million from your plot in two ways; first, by filtering the data manually; second, by setting a suitable scale limit.
+
+```{r}
+(over_10_mil <- gapminder_2007 %>%
+  filter(pop < 10^7))
+
+```
+```{r}
+over_10_mil %>%
+  ggplot(mapping = aes(x = gdpPercap, y = lifeExp, size = pop)) +
+  geom_point()
+  
+```
+```{r}
+p <- gapminder_2007 %>% ggplot(mapping = aes(x = gdpPercap, y = lifeExp, size = pop)) +
+  geom_point() 
+
+p + scale_size_continuous(limits = c(0, 10^7))
+
+# its scale size continuous instead of scale x continuous
+  
+```
+b. Again create a scatterplot of GDP per capita vs life expectancy for the year 2007. But now ensure that gdpPercap is shown on a log scale in two ways: first, by transforming the data manually; second, by setting a suitable position scale.
+
+```{r}
+# manual way 
+gapminder_2007 %>%
+  ggplot(mapping = aes(x = log(gdpPercap), y = lifeExp)) +
+  geom_point()
+# position scale
+p <- gapminder_2007 %>%
+  ggplot(mapping = aes(x = gdpPercap, y = lifeExp)) +
+  geom_point() 
+
+p + scale_x_continuous(trans = "log", breaks = pretty(0:60000)) 
+```
+
+# Exercise 8.3
+
+a. Recreate the following two-dimensional histogram for the diamonds data set, where both axes use the log10 transformation.
+
+```{r}
+d <- diamonds %>%
+  ggplot(mapping = aes(x = carat, y = price)) +
+  geom_bin_2d()
+
+d1 <- d + scale_x_continuous(trans = "log10") +
+  scale_y_continuous(trans = "log10")
+
+
+  
+```
+b. Now use change the color scheme to one of those from the RColorBrewer package.
+
+```{r}
+library("RColorBrewer")
+```
+
+```{r}
+d1 + scale_fill_distiller(palette = "BrBG")
+
+#its fill not colour bear in mind 
+```
+Explain why it was possible to change the color scheme by adjusting the fill scale even though we did not (explicitly) map any variable to the fill aesthetic.
+
+geombin2d already has the fill aesthetic as an argument so manually filling will make it redundant, this is a shortcut 
+
+# Exercise 8.4
+
+Recreate the following figure based on the gapminder data by following these steps (note that the countries are ordered according to life expectancy in 2007).
+
+```{r}
+ gapminder %>%
+    filter(year == 2007) %>%
+    select(country, lifeExp) %>%
+    rename(life_exp_2007 = lifeExp) -> df
+  
+  gapminder %>%
+    filter(continent == "Asia") %>%
+    left_join(df, by = "country") %>%
+    ggplot(mapping = aes(x = year, y = reorder(country, life_exp_2007), fill = lifeExp))+
+    geom_tile() +
+    scale_fill_gradient(
+      low      = "darkblue", 
+      high     = "white") +
+    scale_x_continuous(expand = c(0, 0))
+```
+
+a. Filter the data to only focus on countries in Asia and create a heatmap in which lifeExp is mapped to the fill aesthetic.
+
+```{r}
+gapminder %>%
+      filter(continent == "Asia") %>%
+      ggplot(mapping = aes(x = year, y = country, fill = lifeExp))+
+      geom_tile() 
+```
+
+b. Extend the previous figure by adding a column `life_exp_2007` to the data set which simply states the life expectancy in the year 2007 for each country. Then, when plotting the data, reorder `country` by `life_exp_2007`.
+```{r}
+gapminder %>%
+      filter(year == 2007) %>%
+      select(country, lifeExp) %>%
+      rename(life_exp_2007 = lifeExp) -> df
+    
+    gapminder %>%
+      filter(continent == "Asia") %>%
+      left_join(df, by = "country") %>%
+      ggplot(mapping = aes(x = year, y = reorder(country, life_exp_2007), fill = lifeExp))+
+      geom_tile()
+```
+
+```{r}
+  gapminder %>%
+    filter(year == 2007) %>%
+    select(country, lifeExp) %>%
+    rename(life_exp_2007 = lifeExp) -> df
+  
+  gapminder %>%
+    filter(continent == "Asia") %>%
+    left_join(df, by = "country") %>%
+    ggplot(mapping = aes(x = year, y = reorder(country, life_exp_2007), fill = lifeExp))+
+    geom_tile() +
+    scale_fill_gradient(
+      low      = "darkblue", 
+      high     = "white") +
+    scale_x_continuous(expand = c(0, 0))
+  # expand removes the padding 
+```
+
+# Exercise 8.5 
+
+a. If you have an active internet connection, install the package RCurl and import the data from the XML file into R using the following code. This uses the live XML feed, i.e. you will be able to visualise how many bikes are available at which station in real time.
+
+```{r}
+library("XML")
+install.packages("RCurl")
+library("RCurl") # you will need to install this package first
+"https://tfl.gov.uk/tfl/syndication/feeds/cycle-hire/livecyclehireupdates.xml" %>%
+  getURL() %>%
+  xmlParse() %>% 
+  xmlToDataFrame(stringsAsFactors = FALSE) %>%
+  tibble() -> bike_stations
+```
+
+
+b. Remove the variables installDate and removalDate (we won’t need them) and then make sure that all other variables have suitable data types.
+
+```{r}
+bike_stations %>%
+  select(!c(installDate, removalDate)) -> bike_stations
+```
+
+```{r}
+   bike_stations <- bike_stations %>%
+      clean_names() %>%
+      mutate(across(c(lat, long), as.double)) %>%
+      mutate(across(c(id, nb_bikes, nb_empty_docks, nb_docks), as.integer)) %>%
+      mutate(across(c(installed, locked, temporary), as.logical))
+```
+
+c. Display the locations of the bike stations as markers a map so that (i) when you hover over a marker, you see the name of the station, (ii) when you click on a marker, you see the number of available bikes at a station.
+
+```{r}
+library("leaflet")
+
+bike_stations %>%
+    leaflet() %>%
+    addTiles() %>%
+    addMarkers(
+      lng   = ~long, 
+      lat   = ~lat,
+      popup = ~paste("Bikes available:", nb_bikes),
+      label = ~name
+    )
+```
+

@@ -1,0 +1,345 @@
+---
+title: "practical_2"
+output: html_notebook
+---
+
+# 2.0 Exercise
+
+## Start a new R notebook named practical_02.Rmd and save it to the rmd folder of your RStudio project practicals. Make sure that all the R packages you need are loaded at the beginning. All the following exercises should be attempted within R code chunks of this notebook. (complete)
+
+# 2.1 Exercise (complete)
+## Create a variable that is of type:
+
+a. double, 
+
+```{r}
+a <- 5.5
+
+typeof(a)
+```
+
+b. integer,
+
+```{r}
+b <- 65L
+
+typeof(b)
+```
+
+c. character,
+
+```{r}
+c <-  "hello world"
+
+typeof(c)
+```
+
+d. logical.
+
+```{r}
+d <- TRUE
+
+typeof(d)
+```
+
+e. Set
+
+```{r}
+x <- TRUE
+y <- "TRUE"
+a <- 1
+b <- 1L
+c <- "1"
+```
+
+Without executing the code, state which of these operations are allowed. For those that are, state what the result is and its data type. (complete )
+
+```{r}
+ax <- a - x # 0 (dbl)
+xb <- x + b # 2 (int)
+cx <- c * x # will cause error
+xy <- c(x, y) # character type it will coerce to character type ("TRUE","TRUE")
+ab <- c(a, b) # (1,1) will coerce to double
+abc <- c(a, b, c) # ("1","1","1") will coerce to character
+
+
+```
+
+# 2.3 Exercise
+
+Read about the function paste() in the documentation and use it to write:
+
+`"pi is approximately equal to 3.14159265358979"`
+
+to the console but without typing in any numbers.
+
+
+
+```{r}
+?paste
+
+paste("pi is approximately equal to", pi)
+
+```
+
+# 2.3 Exercise
+
+a. Write code that assigns some real number to a variable x and then prints a message stating whether x is divisible by 2 or not. Hint: You may find the operator %% useful which gives the remainder term. That is, x %% 2 returns 0 whenever x is divisible by 2. (complete)
+
+
+```{r}
+# Using ifelse function
+
+x <- 29
+
+divisible_by_2 <- ifelse(
+  test = x %% 2 == 0,
+  yes = "divisible by 2",
+  no = "not divisible by 2"
+)
+
+print(divisible_by_2)
+
+
+```
+
+b. Modify the code from the previous part to state whether x is divisible by 2, by 3 or by neither. Hint: x %% 3 returns 0 whenever x is divisible by 3. (complete)
+
+```{r}
+if (x %% 3 == 0 & x %% 2 == 0) {
+  print("divisible by both")
+} else if (x %% 3 == 0) {
+  print("divisible by 3")
+} else if (x %% 2 == 0) {
+  print("divisible by 2")
+} else {
+  print("neither")
+}
+```
+
+2.4 Exercise
+
+a. Write a function normalise which takes a numeric vector x as an argument, subtracts the mean and then divides by the standard deviation of its elements, returning the result (hint: you may find the functions mean() and sd() helpful). (complete)
+
+```{r}
+normalise <- function(x) {
+  average_by_standard_dev <-  mean(x) / sd(x)
+  return(average_by_standard_dev)
+}
+
+x <-  c(1, 2, 3, 4, 5, 6, 9, 7)
+
+normalise(x)
+# check
+mean(x) / sd(x)
+
+```
+
+b. Test your function from (a) on the vector x <- c(0, 2, -5, 1, 2) (you can verify the output of your code by y <- normalise(x) and then verifying that mean(y) is 0 and sd(y) is 1). (complete)
+
+```{r}
+x <- c(0, 2, -5, 1, 2)
+
+normalise(x)
+# check
+
+mean(x) / sd(x)
+```
+
+
+c. What happens if you test your function from (a) on x <- c(0, NA, -5, 1, 2) and why? Modify your function so that it can be used to only normalise the non-missing values in a vector if explicitly requested by the user (i.e. the default behaviour of normalise(x) should remain unchanged). (incomplete)
+
+```{r}
+x <- c(0, NA, -5, 1, 2)
+
+normalise(x)
+
+# You get NA because of the NA
+# modifying function
+normalise <- function(x, na.rm = FALSE) {
+  average_by_standard_dev <- (mean(x, na.rm = TRUE) / sd(x, na.rm = TRUE))
+  return(average_by_standard_dev)
+}
+
+normalise(x, na.rm = TRUE)
+
+
+# go back to this one completed it but how i did that confuses me
+
+```
+
+# 2.5 Exercise
+
+Create a vector filled with 5, 4, 3, 2, 1 (in this order):
+
+a. manually using the c() function,(complete)
+
+```{r}
+c(5, 3, 3, 2, 1)
+```
+
+b. using the : operator, (complete)
+
+```{r}
+c(5:1)
+```
+
+
+c. using seq() with a specified step size, (complete)
+
+```{r}
+seq(from = 5, to = 1, by = -1)
+```
+
+d. using seq() with a specified vector length. (complete)
+
+```{r}
+seq(from = 5, to = 1, length.out = 5)
+```
+
+# 2.6 Exercise
+
+a. Recreate the vector c(1:3, 1:3) using rep() with times argument,(complete)
+
+```{r}
+one_two_three <- c(1, 2, 3)
+rep(one_two_three, times = 2)
+```
+
+
+Recreate the vector c(1, 1, 2, 2, 3, 3) using rep() with each argument. (complete)
+
+```{r}
+rep(one_two_three, each = 2)
+```
+
+# 2.7 Exercise
+
+R provides a built-in constant vector letters which is as follows.
+
+```{r}
+letters
+```
+
+a. Construct a numeric vector x such that typing letters[x] into the console yields the given output. For each line of output, type in no more than 2 numbers to define x. (complete)
+
+`[1] "a"`
+`[1] "c" "d" "e"`
+`[1] "e" "d" "c"`
+`[1] "b" "d" "f" "h" "j" "l" "n" "p" "r" "t" "v" "x" "z"`
+`[1] "z" "w" "t" "q" "n" "k" "h" "e" "b"`
+
+```{r}
+# a
+x <- 1
+letters[x]
+# c d e
+x <- c(3:5)
+letters[x]
+# e d c
+x <- c(5:3)
+letters[x]
+# b d f h j l n p r t v x z
+x <- seq(from = 2, to = length(letters), by = 2)
+letters[x]
+# z w t q n k h e b
+x <- seq(from = length(letters), to = 2, by = -3)
+letters[x]
+
+```
+
+b.Without running the code, predict the output each of the following eight chunks of code. (complete)
+
+```{r}
+x <- letters
+x[length(x)] <- "a"
+x # last letter will be replaced by "a"
+
+x <- letters
+x[1:length(x)] <- "bla"
+x # you will get bla 26 times
+
+x <- letters
+x[1:length(x)] <- 0
+x # you will get 0 26 timws 
+
+x <- letters
+x <- "a"
+x # x will just be a, a will be stored as x instead 
+
+x <- letters
+y <- 1:length(letters)
+x[y > 10] <- "bla" 
+x # any letter past j will be replaced by "bla"
+
+c("b", "c") %in% letters # Will return TRUE if letters appear in vector 
+
+which(letters == "c") # will tell index position of c
+
+letters[27] # should be NA or error.
+```
+
+
+c. Without running the code, predict the output each of the following three lines of code.
+
+```{r}
+intersect(letters[2], letters) # b
+
+setdiff(letters, letters[3:length(letters)]) # a b
+
+letters[which.min(c(2, 1, 2))] # do not understand the third one.
+```
+
+# 2.8 Exercise
+
+Write a function count_na() that takes a vector as an argument and then returns the number of missing values in the vector.
+
+a. using a for-loop,
+
+```{r}
+x <- c(2, NA, 4, NA, 9, 10, 13, NA)
+
+count_na <- function(x) {
+  n_na <- 0
+  for (na in x) {
+    if (is.na(na)) {
+      n_na <-  n_na + 1
+    }
+  }
+  return(n_na)
+}
+
+count_na(x)
+
+# come back to this later... you suck at for loops
+```
+
+b. without using any loop.
+```{r}
+count_na <- function(x) {
+  n_na <- sum(is.na(x))
+  return(n_na)
+}
+
+x <- c(1, NA, NA, 7, 4, 8)
+count_na(x)
+```
+
+# 2.9
+
+In the lecture notes, we have learned that we should use the operators && and || for single values and & and | for vectors. What does the following expression do and why?
+
+
+```{r}
+c(TRUE, TRUE) && c(TRUE, FALSE)
+```
+
+It is a logical operator which checks if both conditions are true, this will return True, however with the vectorised operator it will return false. 
+The "double" logical binary operators **&&** and **||** only consider the **first** **element** of the vectors on each side, i.e. this expression evaluates.
+
+# 2.10 Exercise
+
+Go through all the code written for the previous answers and make sure that it follows the style guidelines from Chapter 2.
+
+I will use lintr.
+
