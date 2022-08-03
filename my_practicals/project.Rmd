@@ -1,0 +1,459 @@
+---
+title: "Coursework_1"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+# loading all the packages I need for the questions
+library(tidyverse)
+library(lubridate)
+library(here)
+library(janitor)
+library(readxl)
+library(RColorBrewer)
+library(scales)
+```
+
+# Question 1
+
+## a
+```{r}
+read_lines(here("data_cw", "data_raw","nasa_global_temperature.txt"),n_max = 10) # having a look at the first 10 lines to see what I need to do
+nasa_temp <- read_table(here("data_cw", "data_raw","nasa_global_temperature.txt"),skip = 3) %>% # skipping the unnecessary parts 
+  remove_missing() %>% # removing anything that is unnecessary 
+  rename(date = 'Year', temp = No_Smoothing) %>% #renaming variables 
+  mutate(date = parse_date(date,format = "%Y")) %>% #changing the type of variable to date type
+  select(date, temp) #only leaving the variables I want 
+  
+nasa_temp # table 
+
+  nasa_temp_plot <- ggplot(nasa_temp, mapping = aes(x = date, y = temp)) + # creating the plot and what to put on the axes
+    geom_point() + # using a scatterplot graph
+    ggtitle("Arctic temperatures", "Temperatures of the arctic from 1880 to 2020") + # placing a suitable title 
+    ylab("Temp (Degrees Celsius)") + # labelling the axes
+    xlab("Year")
+
+  nasa_temp_plot # visualisation 
+```
+
+## b
+
+```{r}
+read_lines(here("data_cw", "data_raw","nasa_arctic_sea_ice.csv"),n_max = 10) # having a look at the first 10 lines to see what I need to do
+nasa_ice <- read.csv2(here("data_cw", "data_raw","nasa_arctic_sea_ice.csv")) %>% # read csv2 because it uses a different delim 
+  rename(date = 'year', ice = extent) %>% #renaming variables 
+  mutate(date = as.character(date)) %>%  #changing the column types have to turn to character to parse as date 
+  mutate(date = parse_date(date, format = "%Y")) %>%
+  select(date, ice) # selecting the variables I want
+
+nasa_ice
+
+nasa_ice_plot <- ggplot(nasa_ice, mapping = aes(x = date, y = ice)) + # creating the plot and what to put on the axes
+  geom_smooth() + # I thought this type of graph would be best 
+  ggtitle(" Arctic ice levels", "Levels of ice in the arctic from 1979 to 2020") + # adding labels to my visualisation
+  ylab("sea ice (per million sq km)") +
+  xlab("Year")
+
+
+
+nasa_ice_plot
+  
+```
+## c 
+
+```{r}
+read_lines(here("data_cw", "data_raw","nasa_sea_level.csv"), n_max = 50) # having a look at the first 50 lines to see what I need to do 
+nasa_sea <- read_log(here("data_cw", "data_raw","nasa_sea_level.csv"),skip = 48) %>% # the best function to read the file
+  remove_missing() %>% # removing anything unnecessary
+  select(X3, X12) %>% # selecting the columns I want 
+  rename(date = X3, sea = X12) %>% # giving the columns the appropriate names 
+  mutate(date = date_decimal(date)) %>% # changing the column type 
+  mutate(date = as_date(date))
+
+nasa_sea
+
+nasa_sea_plot <- ggplot(nasa_sea, mapping = aes(x = date, y = sea)) + #creating the plot and what to put on the axes
+  geom_line() +
+  ggtitle("Sea levels", "Change in sea levels over time") +
+  xlab("Year") +
+  ylab("Sea levels (mm)")
+  
+nasa_sea_plot
+  
+
+
+```
+
+## d
+
+```{r}
+read_lines(here("data_cw", "data_raw","nasa_carbon_dioxide.txt"), n_max = 60) # looking at the lines to see what to do 
+
+nasa_co2 <- read_table(here("data_cw", "data_raw","nasa_carbon_dioxide.txt"), skip = 52) %>%
+  select("#", date, alized) %>% # selecting the variables I want 
+  unite(date, "#", date, sep = "") %>% # uniting two columns together to make one column which is the date 
+  rename("co2" = "alized") %>% # renaming variables
+  mutate(date = parse_date(date, format = "%Y%m")) # turning column into a date type
+
+nasa_co2
+         
+nasa_co2_plot<- ggplot(nasa_co2, mapping =  aes(x = date, y = co2)) + # creating a plot with labels 
+  geom_col() +
+  coord_cartesian(ylim = c(300,450)) + # there were two data points that were extreme outliers so they were removed from the plot 
+  ggtitle("Co2 levels over time", ("Average global co2 level from 1958 to 2020")) +
+  xlab("") +
+  ylab("Co2 level (ppm)")
+
+nasa_co2_plot
+
+
+```
+
+## e
+
+```{r}
+
+nasa1 <- full_join( nasa_co2, nasa_temp, by = "date") %>% # joined two tibbles together 
+  arrange(date)
+
+nasa2 <- full_join(nasa_ice, nasa_sea, by = "date") %>% # joined two tibbles together 
+  arrange(date)
+  
+nasa <- left_join(nasa1, nasa2) %>% #joined all the tibbles together 
+  arrange(date)
+
+nasa
+
+```
+
+## f
+
+```{r}
+nasa_plot<- nasa %>% 
+  select(date, temp, co2) %>%
+  filter(date >= as.Date("1960-01-01")) #this is to get the years past 1960 and between 2020
+
+temp_co2 <- ggplot(nasa_plot, mapping = aes(x = temp, y = co2, colour = date)) +
+  geom_point(position = "jitter") + # this is to prevent overplotting
+  ggtitle("Temperature and Co2 levels from 1960") + # adding titles and labels 
+  ylim(300, 400) + # to remove the outliers from the graph
+  xlab("Temp (Degrees celsius)") +
+  ylab("Co2 levels") +
+  theme(panel.grid.major.x = element_line(color = "grey90"), # this is to make the graph better visually and to see the colour scheme better by removinh the backround etc
+    panel.grid.minor.x = element_blank(),
+    panel.grid.major.y = element_line(colour = "grey90"), 
+    panel.grid.minor.y = element_blank(),
+    panel.background = element_blank(),
+    axis.line.x = element_line("black"),
+    axis.line.y = element_line("black")
+  )
+
+temp_co2 + 
+  labs(colour = "Year") # labeling the legend 
+```
+
+
+
+# Question 2
+
+## a
+
+```{r}
+read_lines(here("data_cw", "data_raw","luthi_carbon_dioxide.txt"), n_max = 784) # reading lines to know what I am doing 
+
+historic_co2 <- read_table(here("data_cw", "data_raw","luthi_carbon_dioxide.txt"), skip = 773) %>% # turning into tibble
+  rename(yrbp = "Age(yrBP)", co2 = "CO2(ppmv)") # renaming variables
+  
+  
+```
+
+## b
+
+```{r}
+
+historic_co2 <- historic_co2 %>%
+  mutate(yrbp = yrbp + 13) %>% # thirteen years from 2008 makes 2021 which is the present
+  select(yrbp, co2) # selecting the variables I want 
+ 
+nasa_co2_1 <- nasa_co2 %>%
+   mutate(yrbp = as.duration(((today()) - (date)))/dyears(1)) %>% # to get the years before present 
+   mutate(yrbp = round(yrbp)) %>% # rounding the values to create whole numbers
+   select(yrbp, co2) # selecting the variables I want
+
+ nasa_co2_1
+ historic_co2
+
+combined_co2 <- full_join(nasa_co2_1, historic_co2, by = c("yrbp", "co2"))  # this is to create the combined_co2 tibble needed for the graph
+
+combined_co2
+
+``` 
+
+## c
+
+```{r}
+
+combined_co2_plot <- ggplot(combined_co2, mapping = aes(x = yrbp, y= co2)) + #creating a plot with labels
+  geom_line() + # using the same graph as the figure
+  ylim(180, 400) + # setting the limits to recreate as accurately as possible
+  xlab("Years before present") + # creating the same labels
+  ylab("Carbon dioxide [ppm]") + 
+   theme(panel.grid.major.x = element_blank(), # creating a theme to recreate the graph
+    panel.grid.minor.x = element_blank(),
+    panel.grid.major.y = element_blank(), 
+    panel.grid.minor.y = element_blank(),
+    panel.background = element_blank(),
+    axis.line.x = element_line("black"),
+    axis.line.y = element_line("black")
+  )
+
+combined_co2_plot <- combined_co2_plot + # changing the font sizes to recreate the graph
+  theme(
+  axis.title.x = element_text(size = 18),
+  axis.text.x = element_text(size = 12),
+  axis.title.y = element_text(size = 18),
+  axis.text.y = element_text(size = 12)
+)
+
+(combined_co2_plot <- combined_co2_plot + scale_x_reverse(labels = comma)) # add a comma as a grouping mark
+
+
+
+
+```
+## c continued
+
+```{r}
+combined_co2_plot <-combined_co2_plot + # this is to add the annotation however I could not quite find the colour 
+annotate("text", x = 250000, y = 360, label = "2021 average:
+417 ppm", colour = "red2")
+
+combined_co2_plot <- combined_co2_plot + # adding the arrow
+  annotate("curve", x = 150000, xend = 10000 , y = 350, yend = 400, colour = "red2", size = 1, arrow=arrow())
+
+```
+
+
+
+# Question 3
+
+## a
+
+```{r}
+
+sea_ice_1 <- read_xlsx(here("data_cw", "data_raw","nsidc_sea_ice_daily_extent.xlsx")) %>% # reading data into tibble 
+  rename("month" = "...1", "day" = "...2") %>% # renaming variables into the appropriate names
+  fill(month) %>% # to ensure that months are all present and to prevent NAs
+  mutate(day = as.integer(day), month = match(month, month.name)) %>% # turning year month and day into integers 
+  select(-c("...47",contains("1981-2010"))) # selecting everything except unnecessary columns 
+ 
+sea_ice_1_dates <- sea_ice_1 %>% # making dates 
+  select(-c(month, day))
+
+sea_ice_1_m_d <- sea_ice_1 %>% # making a tibble with the month and days as columns 
+  select(month, day)
+
+sea_ice_1_dates <- sea_ice_1_dates %>% # this is to get the dates 
+  pivot_longer(everything(), names_to = "year")
+
+
+sea_ice_1 <-  cbind(sea_ice_1_dates,sea_ice_1_m_d) # binding the column together 
+
+sea_ice_1 <- sea_ice_1 %>%
+  rename("extent" = "value") %>% 
+  select(extent,everything()) %>% 
+  mutate(day = as.integer(day), year = as.integer(year)) %>%
+  group_by(month) 
+
+sea_ice_1
+```
+
+## b
+
+```{r}
+b_avg <- sea_ice_1 %>% # creating a baseline
+  filter(year==1979) %>%
+  arrange(month,day) %>%
+  unique() %>%
+  group_by(month) %>%
+  summarise("baseline"= mean(extent, na.rm = TRUE)) 
+ 
+b_avg
+   
+m_avg <- sea_ice_1 %>% # creating monthly averages
+  group_by(year, month) %>% 
+  summarise("monthly_averages"= mean(extent, na.rm = TRUE)) 
+
+m_avg
+
+sea_ice_2 <- left_join(b_avg, m_avg) %>% # dividing baseline and monthly averages to create proportion_baseline_extent
+  mutate("proportion_baseline_extent" = monthly_averages/baseline) %>%
+  select(year, month, proportion_baseline_extent)
+ 
+sea_ice_2%>%
+  group_by(month)
+ 
+```
+
+## c
+
+```{r}
+
+sea_ice_2_plot <- sea_ice_2 %>% # creating the plot 
+  filter(year > 1978 & year < 2021) %>% # filtering the appropriate years
+  group_by(month) %>%
+  ggplot(sea_ice_2, mapping = aes(y =month.name[month], x = year)) + # turning the month into month names 
+  geom_raster(aes(fill = proportion_baseline_extent)) + 
+  scale_fill_distiller(palette = "RdPu") # getting the colour 
+  
+sea_ice_2_plot <- sea_ice_2_plot + # using theme to recreate graph as accurately as I can 
+  theme(panel.grid.major.x = element_blank(), 
+    panel.grid.minor.x = element_blank(),
+    panel.grid.major.y = element_blank(), 
+    panel.grid.minor.y = element_blank(),
+    panel.background = element_blank(),
+    axis.line.x = element_line("black"),
+    axis.line.y = element_line("black")
+  )
+
+sea_ice_2_plot <- sea_ice_2_plot + # adding labels 
+  ggtitle("Sea ice (northern hemisphere)") +
+  xlab("Year") +
+  ylab("Month") +
+  labs(fill = "Proportion of 1979 extent")
+
+sea_ice_2_plot
+
+  
+```
+
+
+# question 4
+
+## a
+```{r}
+read_lines(here("data_cw", "data_raw","stop_and_search.csv"), n_max = 10) #reading the first few lines 
+
+stop_search_1 <- read_csv(here("data_cw", "data_raw","stop_and_search.csv")) %>% #reading into tibble 
+  rename("stops" = "Number of stop and searches",  "population" = "Population by ethnicity", "rate" = "Rate per 1,000 population by ethnicity", "year" = "Time") %>%  # giving variables appropriate names 
+  clean_names() %>% # tidying names 
+  select(year, ethnicity, legislation_type, geography, stops, population, rate) %>% # selecting the columns I want to keep
+  filter(ethnicity == "White" | ethnicity == "Black" | ethnicity == "All" | ethnicity == "Other" | ethnicity == "All") %>% # filtering ethnicities I want 
+  mutate("population" = as.numeric(population, na.rm = TRUE), "rate" = as.numeric(rate, na.rm = TRUE) , "stops" = as.numeric(stops, na.rm = TRUE)) %>% # changing col types 
+  mutate(year = year(as.Date(sub('[0-9]{2}-', '', year), format = '%Y'))) # turning year into date type parsing did not work so I decided to split the years up instead 
+
+
+
+stop_search_1
+
+
+```
+
+## b
+```{r}
+white_rate <- stop_search_1 %>%
+  filter(ethnicity ==  "White") %>% # filter ethnicity to white only
+  remove_missing() %>% # remove missing parts
+  select(rate) %>%
+  rename("white_rate" = rate )# creating a white rate 
+
+stop_search_rate <- stop_search_1 %>% 
+  select(rate) %>%
+  remove_missing()
+
+ # white_rate/stop_search_rate
+
+
+
+
+```
+
+## c
+1.**_What year had the highest number of stop and searches and what are the possible reasons behind this ?_** This is operationalised since we are looking at the highest number of searches furthermore looking we can use this to further look for potential reasons why.
+
+2.**_Is there a correlation between the population and the amount of stop and searches?_** This is operationalised since we will be looking at the correlation between two variables.
+
+3.**_Do the rate of stops by ethnicity differ from 2014 onwards?_** This will look at which ethnicity is being searched at a different rate in the most recent years this dataset has available. 
+
+## d 
+
+### Question 1
+
+```{r}
+yearly_stops <- stop_search_1 %>% #selecting and creating a plot to help me with question 1
+  select(year, stops) %>%
+  arrange(desc(stops)) %>%
+  group_by(year) %>%
+  summarise("total_stops" = sum(year)/100) %>%
+  mutate(year= as.character(year)) %>%
+  mutate(year = parse_date(year, format = "%Y")) 
+
+yearly_stops
+
+
+yearly_stops_plot <- ggplot(yearly_stops, mapping = aes(x = year, y = total_stops)) +
+  geom_col() +
+  scale_y_continuous(labels = comma) + 
+  xlab("Year") +
+  ylab("Stops (Per 1000 stops)") +
+  ggtitle("Total amount of stops per year")
+
+yearly_stops_plot
+```
+The graph shows that 2019 has had the most stop and searches performed which answers the initial question. However looking closer into the graph it raises new questions, the stops seemed to have increased by over 100,000 in 2019 compared to the other years leading to the question of why there has been such a steep increase in searches. 
+
+### Question 2
+```{r}
+population_stop <- stop_search_1 %>% 
+  select(population, stops) %>%
+  remove_missing() %>%
+  group_by(population) %>%
+  summarise(total_stops = sum(stops)) %>%
+  mutate(percentage_of_pop = (total_stops/population)*100) %>% # used to find the percentage
+  mutate(population_per_mil = population/1000000) # population per mil to help with scaling the graph
+
+population_stop
+
+ggplot(population_stop, mapping = aes(y = total_stops , x = percentage_of_pop, colour = population_per_mil)) +
+  geom_point(position = "jitter") + #this is to help with overplotting 
+  scale_y_continuous(labels = comma) +
+  ggtitle("Proportion of stops", " the percentage of stops for every population") + #adding labels 
+  xlab("Percentage of population stopped") +
+  ylab("Total stops")
+ 
+```
+This graph helps answer the question to a certain degree where the higher the population, the less total stops there were. And the higher percentage of stops were due to a lower population therefore less stops were made in total but there were a higher proportion of stops made. This raises new questions and theories such as the idea that the police can search smaller populations as it is less difficult, this graph however only has meaningful extremes, to support the answers of question 2 we need to zoom in on the cluster (see below)
+
+```{r}
+ggplot(population_stop, mapping = aes(y = total_stops , x = population_per_mil , colour = percentage_of_pop )) + # adding limits to sort of zoom in the graph
+  geom_point(position = "jitter") +
+  scale_y_continuous(labels = comma) +
+  ggtitle("Proportion of stops", " the percentage of stops for every population") +
+  xlab("Population per mil") +
+  ylab("Total stops") +
+  ylim(0,30000)+
+  xlim(0,10)
+```
+
+When zooming in to the cluster, it shows that there is a lower percentage of the population getting stopped and the majority of the points are of a population of less than 1 million, showing that there is indeed a positive correlation between population and the number of stop and searches, but when looking closer there is a higher percentage of people getting searched when the population is lower. 
+
+### question 3
+
+```{r}
+stop_search_1_2015_onwards <- stop_search_1 %>%
+  filter(year>=2014) %>%
+  select(ethnicity, geography, rate, stops, year) %>%
+  group_by(geography) 
+stop_search_1_2015_onwards 
+
+ggplot(stop_search_1_2015_onwards, mapping = aes(x = ethnicity, y = rate)) +
+  geom_col() +
+  facet_wrap(~year) # faceting by years 
+
+
+
+```
+
+This shows that the black ethnicity have had the higher rate of stop searches compared to those of "white" and "other" ethnicity, this may suggest that black people are disproportionately stopped.
